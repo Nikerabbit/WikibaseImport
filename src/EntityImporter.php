@@ -57,7 +57,7 @@ class EntityImporter {
 		$this->batchSize = 10;
 	}
 
-	public function importEntities( array $ids, $importStatements = true ) {
+	public function importEntities( array $ids, $importStatements = true, $keepOriginalIds = false ) {
 		$batches = array_chunk( $ids, $this->batchSize );
 
 		$stashedEntities = array();
@@ -71,7 +71,7 @@ class EntityImporter {
 				$this->logger->error( 'Failed to retrieve items for batch' );
 			}
 
-			$stashedEntities = array_merge( $stashedEntities, $this->importBatch( $batch ) );
+			$stashedEntities = array_merge( $stashedEntities, $this->importBatch( $batch, $keepOriginalIds ) );
 		}
 
 		if ( $importStatements === true ) {
@@ -92,7 +92,7 @@ class EntityImporter {
 		}
 	}
 
-	private function importBatch( array $batch ) {
+	private function importBatch( array $batch, $keepOriginalIds ) {
 		$entities = $this->apiEntityLookup->getEntities( $batch );
 
 		if ( !is_array( $entities ) ) {
@@ -111,7 +111,7 @@ class EntityImporter {
 				try {
 					$this->logger->info( "Creating $originalId" );
 
-					$entityRevision = $this->createEntity( $entity );
+					$entityRevision = $this->createEntity( $entity, $keepOriginalIds );
 					$localId = $entityRevision->getEntity()->getId();
 					$this->entityMappingStore->add( $originalEntityId, $localId );
 				} catch( \Exception $ex ) {
@@ -126,8 +126,10 @@ class EntityImporter {
 		return $stashedEntities;
 	}
 
-	private function createEntity( EntityDocument $entity ) {
-		$entity->setId( null );
+	private function createEntity( EntityDocument $entity, $keepOriginalIds ) {
+		if ( !$keepOriginalIds ) {
+			$entity->setId( null );
+		}
 
 		$entity->setStatements( new StatementList() );
 

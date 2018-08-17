@@ -41,6 +41,8 @@ class ImportEntities extends \Maintenance {
 		$this->addOption( 'range', 'Range of ids to import', false, true );
 		$this->addOption( 'stdin', 'Read entity IDs to import from standard input', false, false );
 		$this->addOption( 'all-properties', 'Import all properties', false, false );
+		$this->addOption( 'no-statements', 'Skip statements', false, false );
+		$this->addOption( 'keep-original-ids', 'Keep original ids', false, false );
 	}
 
 	public function execute() {
@@ -66,6 +68,9 @@ class ImportEntities extends \Maintenance {
 			}
 		}
 
+		$withStatements = !$this->hasOption( 'no-statements' );
+		$keepOriginalIds = $this->hasOption( 'keep-original-ids' );
+
 		if ( !isset( $entityIdListBuilder ) ) {
 			$this->logger->error( 'ERROR: No valid import option was provided' );
 
@@ -75,7 +80,7 @@ class ImportEntities extends \Maintenance {
 				$ids = $entityIdListBuilder->getEntityIds( $input );
 
 				$entityImporter = $this->newEntityImporter();
-				$entityImporter->importEntities( $ids );
+				$entityImporter->importEntities( $ids, $withStatements );
 			} catch ( Exception $ex ) {
 				$this->logger->error( $ex->getMessage() );
 			}

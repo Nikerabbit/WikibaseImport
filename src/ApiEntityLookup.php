@@ -7,6 +7,7 @@ use Http;
 use Psr\Log\LoggerInterface;
 use Wikibase\DataModel\Entity\EntityDocument;
 use Wikibase\DataModel\Entity\EntityId;
+use Wikibase\DataModel\Entity\EntityIdParsingException;
 use Wikibase\DataModel\Services\Lookup\EntityLookup;
 
 /**
@@ -119,7 +120,11 @@ class ApiEntityLookup implements EntityLookup {
 				if ( array_key_exists( 'missing', $serialization ) ) {
 					continue;
 				} else if ( $this->deserializer->isDeserializerFor( $serialization ) ) {
-					$entities[$entityId] = $this->deserializer->deserialize( $serialization );
+					try {
+						$entities[$entityId] = $this->deserializer->deserialize( $serialization );
+					} catch ( EntityIdParsingException $e ) {
+						$this->logger->error( "Failed to deserialize entity $entityId: {$e->getMessage()}" );
+					}
 				}
 			}
 		}
